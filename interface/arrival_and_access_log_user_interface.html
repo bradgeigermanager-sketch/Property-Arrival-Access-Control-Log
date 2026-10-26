@@ -380,6 +380,31 @@
             jsonContent.innerText = `Error loading file reference from ${filePath}`;
         }
     }
+            // Add this function to your HTML script tag to trigger badge printing
+    async function printBadgeFromModal(badgeId, name, role, department) {
+        try {
+        const response = await fetch('http://localhost:5000/api/generate-badge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ badge_id: badgeId, name: name, role: role, department: department })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            const printWindow = window.open('', '_blank', 'width=400,height=600');
+            printWindow.document.write(`
+                <html>
+                    <head><title>Print Badge - ${badgeId}</title></head>
+                    <body onload="window.print(); window.close();">
+                        ${result.badge_html}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+        } catch (e) {
+        alert("Could not communicate with badge generation service.");
+    }
 
     function closeModal() {
         document.getElementById('file-modal').style.display = 'none';
