@@ -21,3 +21,13 @@ Execution: Input details into the create_permanent_record() module function with
 File Generation: The script automatically generates a dedicated JSON file under files/personnel/{badge_id}.json using the permanent schema template.
 
 Registry Sync: The script appends the new record into the central identity_library.json directory list, updating active totals and making it instantly searchable by the arrival intake scanner.
+
+
+Procedure: Temporary & Same-Day Visitor Entry
+Credential Assignment: Issue a temporary printed barcode slip and assign a unique identifier (e.g., TEMP902).
+
+Data Capture: Input visitor details, company/reason, escort requirements, permitted security zones, and duration window into the create_temporary_record() function.
+
+Timed File Generation: The script generates an isolated JSON schema containing the access_expiration section, ensuring automatic privilege revocation parameters are clearly established.
+
+Directory Registration: Appends the visitor entry to the master index so that scanning the temporary slip at entry checkpoints instantly flags expiration rules and links back to the visitor's file record.
