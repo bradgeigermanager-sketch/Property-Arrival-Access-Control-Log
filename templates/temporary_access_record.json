@@ -1,0 +1,25 @@
+{
+  "badge_id": "TEMP901",
+  "record_type": "Temporary Visitor / On-Spot Entry",
+  "visitor_info": {
+    "full_name": "Visitor - Security Clearance A",
+    "company_or_reason": "External Maintenance Vendor",
+    "escort_required": true,
+    "escort_name": "John Doe"
+  },
+  "credentials": {
+    "barcode_payload": "TEMP901",
+    "issue_timestamp": "2026-10-26 08:00:00",
+    "status": "Active"
+  },
+  "access_expiration": {
+    "expires_at_date": "2026-10-26",
+    "expires_at_time": "17:00:00",
+    "auto_revoke_on_departure": true,
+    "notes": "Single-day paper slip barcode issued at front desk."
+  },
+  "permissions": {
+    "security_zones": ["Public Lobby", "Maintenance Corridor B"],
+    "synxis_access": false
+  }
+}
