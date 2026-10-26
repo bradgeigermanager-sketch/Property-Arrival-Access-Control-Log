@@ -11,3 +11,13 @@ Step 2: Assign a unique badge_id matching your barcode format.
 Step 3: Generate the individual JSON file using the corresponding template (Permanent vs. Temporary). For temporary records, ensure the access_expiration fields are populated (even if left blank or set to same-day auto-revoke).
 
 Step 4: Append the new record entry into the Master Registry Index so the intake channel can successfully query and link it upon scanning.
+
+
+Procedure: Regular Records Initial Entry
+Data Collection: Gather new staff member credentials (Full Name, Department, Role, Extension, and permitted security zones).
+
+Execution: Input details into the create_permanent_record() module function with a unique badge_id.
+
+File Generation: The script automatically generates a dedicated JSON file under files/personnel/{badge_id}.json using the permanent schema template.
+
+Registry Sync: The script appends the new record into the central identity_library.json directory list, updating active totals and making it instantly searchable by the arrival intake scanner.
