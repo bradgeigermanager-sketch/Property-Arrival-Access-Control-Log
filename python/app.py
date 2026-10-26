@@ -88,3 +88,15 @@ def api_get_file():
         return jsonify(data)
     else:
         return jsonify({"error": "File path not found on server", "requested_path": file_path}), 404
+
+@app.route('/api/generate-badge', methods=['POST'])
+def api_generate_badge():
+    data = request.get_json()
+    badge_id = data.get("badge_id", "")
+    name = data.get("name", "")
+    role = data.get("role", "Permanent")
+    department = data.get("department", "")
+    expiration = data.get("expiration", "Standard Employee Status")
+    
+    html_badge = generate_badge_html_snippet(badge_id, name, role, department, expiration)
+    return jsonify({"success": True, "badge_html": html_badge})
