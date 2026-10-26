@@ -1,0 +1,30 @@
+{
+  "registry_metadata": {
+    "organization": "Aven Hospitality Property",
+    "last_updated": "2026-10-26",
+    "total_active_records": 3
+  },
+  "directory": [
+    {
+      "badge_id": "EMP1001",
+      "name": "John Doe",
+      "record_type": "Permanent",
+      "department": "Front Desk",
+      "file_path": "files/personnel/EMP1001.json"
+    },
+    {
+      "badge_id": "EMP1002",
+      "name": "Jane Smith",
+      "record_type": "Permanent",
+      "department": "Housekeeping",
+      "file_path": "files/personnel/EMP1002.json"
+    },
+    {
+      "badge_id": "TEMP901",
+      "name": "Visitor - Security Clearance A",
+      "record_type": "Temporary",
+      "department": "External Vendor",
+      "file_path": "files/visitors/TEMP901.json"
+    }
+  ]
+}
