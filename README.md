@@ -31,3 +31,10 @@ Data Capture: Input visitor details, company/reason, escort requirements, permit
 Timed File Generation: The script generates an isolated JSON schema containing the access_expiration section, ensuring automatic privilege revocation parameters are clearly established.
 
 Directory Registration: Appends the visitor entry to the master index so that scanning the temporary slip at entry checkpoints instantly flags expiration rules and links back to the visitor's file record.
+
+Procedure: Badge Generation & Printing
+Record Selection: Access an existing record via the Master Registry directory or create a new permanent/temporary entry.
+
+Slip Rendering: Invoke the badge generator endpoint (/api/generate-badge) passing the payload ID, name, department, and expiration rules.
+
+Print Execution: Output the formatted Code 39 barcode ticket to a local receipt or badge printer for physical issuance at the security or front desk checkpoint.
