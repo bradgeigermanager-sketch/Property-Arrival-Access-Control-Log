@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arrival & Access Tracking Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --accent-color: #3182ce;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #2d3748;
+            --success-color: #38a169;
+            --temp-color: #d69e2e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #2b6cb0;
+        }
+
+        .scanner-simulation {
+            background: #edf2f7;
+            border: 2px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #edf2f7;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-employee { background-color: #c6f6d5; color: #22543d; }
+        .badge-temp { background-color: #feebc8; color: #744210; }
+
+        .file-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .file-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Property Arrival & Access Control Log</h1>
+        <div id="current-time" style="font-weight: 500; color: #718096;"></div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- Left Panel: Controls & Manual Entry -->
+        <div>
+            <div class="card" style="margin-bottom: 20px;">
+                <h2>Manual Entry / Override</h2>
+                <div class="form-group">
+                    <label for="manual-person">Select Individual / Record</label>
+                    <select id="manual-person">
+                        <option value="EMP1001|John Doe|Employee">EMP1001 - John Doe (Front Desk)</option>
+                        <option value="EMP1002|Jane Smith|Employee">EMP1002 - Jane Smith (Housekeeping)</option>
+                        <option value="EMP1003|Alex Johnson|Employee">EMP1003 - Alex Johnson (Maintenance)</option>
+                        <option value="TEMP901|Visitor Security Pass A|Temporary">TEMP901 - Visitor / Clearance A</option>
+                        <option value="TEMP902|Contractor Vendor Badge|Temporary">TEMP902 - Contractor Vendor</option>
+                    </select>
+                </div>
+                <button onclick="logManualEntry()">Record Manual Arrival</button>
+            </div>
+
+            <div class="card">
+                <h2>Barcode Scan Simulator</h2>
+                <p style="font-size: 13px; color: #718096; margin-top: 0;">Simulates a hardware scanner input stream or integration with your python barcode script.</p>
+                <div class="scanner-simulation">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <input type="text" id="simulated-barcode" placeholder="Scan or type badge ID...">
+                    </div>
+                    <button onclick="simulateScan()" style="background-color: #38a169;">Simulate Scan Event</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Live Arrivals Table -->
+        <div>
+            <div class="card">
+                <h2>Arrival Activity Stream</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>ID Number</th>
+                                <th>Name / Description</th>
+                                <th>Type</th>
+                                <th>Personnel File Link</th>
+                            </tr>
+                        </span>
+                        <tbody id="arrival-table-body">
+                            <!-- Populated dynamically via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Mock Database for identity lookups and file linking
+    const identityDatabase = {
+        "EMP1001": { name: "John Doe (Front Desk)", type: "Employee", fileUrl: "#" },
+        "EMP1002": { name: "Jane Smith (Housekeeping)", type: "Employee", fileUrl: "#" },
+        "EMP1003": { name: "Alex Johnson (Maintenance)", type: "Employee", fileUrl: "#" },
+        "TEMP901": { name: "Visitor - Clearance A", type: "Temporary", fileUrl: "#" },
+        "TEMP902": { name: "Contractor Vendor", type: "Temporary", fileUrl: "#" }
+    };
+
+    // Keep an array of arrival logs
+    let arrivals = [
+        { timestamp: "2026-10-26 08:14:22", id: "EMP1001", name: "John Doe (Front Desk)", type: "Employee", fileUrl: "#" },
+        { timestamp: "2026-10-26 08:05:10", id: "TEMP901", name: "Visitor - Clearance A", type: "Temporary", fileUrl: "#" }
+    ];
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('current-time').innerText = now.toLocaleString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function renderTable() {
+        const tbody = document.getElementById('arrival-table-body');
+        tbody.innerHTML = '';
+
+        arrivals.forEach(item => {
+            const row = document.createElement('tr');
+            
+            const badgeClass = item.type === 'Employee' ? 'badge-employee' : 'badge-temp';
+
+            row.innerHTML = `
+                <td>${item.timestamp}</td>
+                <td><strong>${item.id}</strong></td>
+                <td>${item.name}</td>
+                <td><span class="badge ${badgeClass}">${item.type}</span></td>
+                <td><a href="${item.fileUrl}" class="file-link" onclick="openFileRecord(event, '${item.id}')">View File &rarr;</a></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function addArrival(id, name, type) {
+        const now = new Date();
+        const timestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+        
+        // Push to the beginning so newest is at the top
+        arrivals.unshift({
+            timestamp: timestamp,
+            id: id,
+            name: name,
+            type: type,
+            fileUrl: `#${id}`
+        });
+
+        renderTable();
+    }
+
+    function logManualEntry() {
+        const select = document.getElementById('manual-person');
+        const val = select.value.split('|');
+        const id = val[0];
+        const name = val[1];
+        const type = val[2];
+
+        addArrival(id, name, type);
+    }
+
+    function simulateScan() {
+        const input = document.getElementById('simulated-barcode');
+        const id = input.value.trim();
+
+        if (!id) {
+            alert("Please enter or scan a badge ID.");
+            return;
+        }
+
+        if (identityDatabase[id]) {
+            const record = identityDatabase[id];
+            addArrival(id, record.name, record.type);
+            input.value = '';
+        } else {
+            // Fallback for unlisted badges
+            addArrival(id, "Unrecognized Badge / Temporary", "Temporary");
+            input.value = '';
+        }
+    }
+
+    function openFileRecord(e, id) {
+        e.preventDefault();
+        alert(`Opening personnel or visitor file record for ID: ${id}`);
+        // In your production setup, this can route to a detailed view modal or specific document link.
+    }
+
+    // Initial render call
+    renderTable();
+</script>
+
+</body>
+</html>
