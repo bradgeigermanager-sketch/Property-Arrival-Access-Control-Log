@@ -1,0 +1,23 @@
+{
+  "badge_id": "EMP1001",
+  "record_type": "Permanent Employee",
+  "personal_info": {
+    "full_name": "John Doe",
+    "department": "Front Desk",
+    "role": "Shift Supervisor",
+    "contact_extension": "401"
+  },
+  "credentials": {
+    "barcode_payload": "EMP1001",
+    "rfid_card_number": "987654321",
+    "status": "Active"
+  },
+  "permissions": {
+    "security_zones": ["Front Desk", "Back Office", "Staff Breakroom"],
+    "synxis_access": true
+  },
+  "audit_trail": {
+    "created_date": "2025-01-15",
+    "last_reviewed": "2026-06-01"
+  }
+}
