@@ -78,3 +78,13 @@ def api_get_registry():
 if __name__ == '__main__':
     print("Starting Arrival Tracking Local Server...")
     app.run(port=5000, debug=True)
+
+@app.route('/api/file', methods=['GET'])
+def api_get_file():
+    file_path = request.args.get('path', '')
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return jsonify(data)
+    else:
+        return jsonify({"error": "File path not found on server", "requested_path": file_path}), 404
