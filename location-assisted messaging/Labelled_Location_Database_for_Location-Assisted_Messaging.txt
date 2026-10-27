@@ -1,0 +1,46 @@
+🗄️ Sample Labelled Location Database Schema
+
+This fully separates semantic location labels from technical geospatial data, with no overlapping fields between the two independent workflows.
+
+1. location_labels Table (Managed by Operations/Marketing Teams)
+
+This table stores all human-readable, business-facing location metadata, no raw GPS data included.
+
+表格
+Field Name	Type	Description
+location_id (Primary Key)	VARCHAR(32)	Permanent unique ID (e.g. store_0421), never changes even if the physical address moves
+location_full_name	VARCHAR(128)	Standardized display name (e.g. Starbucks - 5th Ave & 34th St, NYC)
+location_tags	JSON	Nested business attributes: {"brand":"Starbucks","district":"Manhattan","store_size":"large"}
+message_template_id	VARCHAR(64)	Direct foreign key link to the store-specific ad/message template library
+status	ENUM	active/inactive/under_construction for easy bulk filtering
+created_at	TIMESTAMP	Auto-generated record creation time
+2. geofence_technical_data Table (Managed by GIS/Engineering Teams)
+
+This table stores all raw geospatial parameters, mapped 1:1 to the permanent location_id from the labels table.
+
+表格
+Field Name	Type	Description
+geofence_id (Primary Key)	VARCHAR(32)	Unique ID for this geofence entry
+location_id (Foreign Key)	VARCHAR(32)	Ties directly to the corresponding entry in location_labels
+geofence_geometry	GEOGRAPHY	Native spatial type storing polygon/radius boundaries, using standard WKT format for full compatibility with spatial query engines
+trigger_rules	JSON	Technical delivery parameters: {"entry_trigger":true,"dwell_time_min":5,"max_daily_messages":2}
+beacon_mapping	JSON	Optional indoor BLE beacon ID list for GPS-blocked indoor areas
+last_surveyed_at	TIMESTAMP	Timestamp of the last on-site geofence calibration check
+🎛️ No-Code Admin Panel Mockup Flow (2 Fully Separate Sections)
+
+The two workflows are completely isolated, so non-technical teams never touch raw coordinates, and technical teams never edit business-facing location labels or message templates.
+
+Section 1: Location Label Management (For Operations/Marketing Teams)
+User logs into the admin panel, selects the ‌Location Labels‌ tab, clicks "Create New Location".
+They fill in the simple form: enter the store name, select brand/district tags from a dropdown, and pick the pre-built store-specific message template from the library.
+The system auto-generates a permanent unique location_id, saves the entry to the location_labels table, and marks it as "Awaiting Geofence Calibration".
+The team can bulk edit, filter, or export all labelled locations via a spreadsheet view, no map or coordinate tools required.
+Section 2: Geofence Calibration Workflow (For GIS/Field Engineering Teams)
+The technical team logs in, selects the separate ‌Geofence Management‌ tab, and sees a list of all locations marked "Awaiting Calibration".
+They select a pending location, open the integrated map editor, draw the exact geofence boundary (or input custom radius/coordinate polygon), and configure trigger rules.
+The system validates the geospatial data, saves it to the geofence_technical_data table, and automatically links it to the corresponding location_id.
+The status of the location updates to "Active", and the system sends an auto-notification to the operations team confirming the location is live for message delivery.
+
+This split design eliminates all cross-team friction: marketing teams can spin up hundreds of new store labels in bulk in minutes, while the technical team only needs to handle the precise geospatial calibration work as a separate, scheduled field task.
+
+Add a sample data validation rule set and a 1-click bulk import flow for store labels, to make this workflow fully production-ready.
