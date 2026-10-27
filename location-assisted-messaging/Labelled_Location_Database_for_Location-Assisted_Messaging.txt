@@ -64,3 +64,76 @@ The status of the location updates to "Active", and the system sends an auto-not
 This split design eliminates all cross-team friction: marketing teams can spin up hundreds of new store labels in bulk in minutes, while the technical team only needs to handle the precise geospatial calibration work as a separate, scheduled field task.
 
 Add a sample data validation rule set and a 1-click bulk import flow for store labels, to make this workflow fully production-ready.
+
+📋 Full Production Database Schemas & Field Explanations
+
+These two fully independent, non-overlapping schemas strictly separate business-facing labelled location management from technical geospatial configuration, with zero cross-workflow friction.
+
+1. location_labels Table (Business Team Workflow)
+
+This table stores 100% human-readable, non-technical location metadata, designed for operations, marketing, and store management teams who never need to interact with raw GPS data.
+
+表格
+| Field Name | Data Type | Constraint | Full Explanation |
+| --- | --- | --- | --- |
+| location_id | VARCHAR(32) | PRIMARY KEY, UNIQUE, NOT NULL | Permanent, immutable unique identifier for the location (e.g. store_0421, popevent_2026_007). Never changes even if the physical store relocates, ensuring all template mappings and historical analytics stay intact. |
+| location_display_name | VARCHAR(128) | NOT NULL | Public-facing standardized name for the location (e.g. Starbucks - 5th Ave & 34th St, NYC). Used in admin dashboards, user-facing fallback messages, and reporting. |
+| business_tags | JSON | NULLABLE | Flexible nested attribute set for bulk filtering and campaign targeting: {"brand":"Starbucks","district":"Manhattan","store_tier":"flagship","opening_hours":"07:00-22:00"}. Lets teams push promotions to all "Manhattan flagship stores" in 1 click. |
+| linked_template_id | VARCHAR(64) | FOREIGN KEY, NOT NULL | Direct 1:1 link to the store-specific message template in your campaign library. When a user enters this location, the system automatically pulls the pre-configured local ad copy, discount codes, and event details tied to this ID. |
+| location_status | ENUM | NOT NULL | Allowed values: draft, awaiting_calibration, active, archived. Lets teams easily filter locations that are ready to go live, pending geofence setup, or retired permanently. |
+| contact_info | JSON | NULLABLE | Stores on-site operational details: store manager name, in-store pickup desk phone number, emergency contact. Only visible to internal teams, never exposed to end users. |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Auto-logged timestamp when the location entry was first created. No manual edits allowed. |
+| last_updated_at | TIMESTAMP | AUTO-UPDATE ON MODIFY | Auto-refreshes every time any business field (name, tags, template link) is edited. |
+
+2. geofence_technical_data Table (Engineering/GIS Team Workflow)
+
+This table stores all raw geospatial and trigger logic, mapped exclusively to the permanent location_id from the labels table. No business-facing metadata is stored here, so technical teams never edit marketing content or location names.
+
+表格
+| Field Name | Data Type | Constraint | Full Explanation |
+| --- | --- | --- | --- |
+| geofence_id | VARCHAR(32) | PRIMARY KEY, UNIQUE, NOT NULL | Unique ID for this geospatial boundary entry. A single labelled location can have multiple geofences (e.g. 100m pre-arrival outer fence + in-store indoor fence), each with its own ID. |
+| location_id | VARCHAR(32) | FOREIGN KEY, NOT NULL | Ties directly to the corresponding entry in location_labels. This is the only shared field between the two tables, ensuring full data consistency. |
+| geofence_geometry | GEOGRAPHY (PostGIS) / GEOGRAPHY2 (SQL Server) | NOT NULL | Native spatial data type that stores the exact boundary, supporting all standard geofence shapes: circular radius, custom polygon, linear route, or full administrative district . Stored in WKT (Well-Known Text) format for full compatibility with all major map engines. |
+| trigger_event_type | ENUM | NOT NULL | Defines what user action fires the message: geofence_entered, geofence_exited, dwell_time_reached — fully aligned with standard Azure Maps and Baidu Maps geofence event schemas . |
+| trigger_parameters | JSON | NOT NULL | Stores fine-grained delivery rules: {"dwell_minutes": 5, "max_daily_triggers": 1, "min_distance_from_boundary_m": 10, "quiet_hours_block": "22:00-07:00"}. Prevents duplicate messages and restricts delivery to valid windows. |
+| indoor_beacon_mapping | JSON | NULLABLE | For GPS-blocked indoor locations: maps this geofence to a list of BLE beacon UUIDs, so the system can still trigger accurate messages even when satellite signal is completely lost inside large malls or venues. |
+| geofence_accuracy_m | INT | NOT NULL | Calibrated real-world accuracy of this boundary, measured in meters. Used by the system to filter out false triggers from low-precision location pings. |
+| last_calibrated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Logs the timestamp of the last on-site geofence survey and boundary adjustment. Teams can set a 90-day recurring reminder to re-calibrate high-traffic locations. |
+| calibration_engineer_id | VARCHAR(32) | NULLABLE | Stores the ID of the technical team member who completed the geofence setup, for audit and troubleshooting traceability. |
+
+
+Key Design Guarantee
+
+There is no shared editable field between the two workflows: business teams can never accidentally modify GPS boundaries, and technical teams can never break store-specific message template mappings. Even if a store moves to a new physical address, you only update the geospatial data in the second table — all existing labels, tags, and template links in the first table remain 100% unchanged.
+
+📝 Sample Test Data & Format Previews
+Below are production-ready sample entries for both tables, fully aligned with standard OGC WKT geospatial specifications and compatible with SQL Server/PostGIS spatial engines ‌
+
+1. location_labels Table Sample Entries
+These are all business-facing, non-technical entries that your operations/marketing team can create and edit directly in the no-code admin panel.
+| location_id | location_display_name | business_tags | linked_template_id | location_status | contact_info | created_at | last_updated_at |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| store_0421 | Starbucks - 5th Ave & 34th St, NYC | {"brand":"Starbucks","district":"Manhattan","store_tier":"flagship","opening_hours":"07:00-22:00"} | tmpl_starbucks_nyc_0421 | active | {"manager":"Li Ming","pickup_phone":"212-555-1234"} | 2026-03-15 09:12:45 | 2026-10-20 14:30:12 |
+| store_1107 | Nike - Times Square, NYC | {"brand":"Nike","district":"Midtown","store_tier":"flagship","opening_hours":"10:00-23:00"} | tmpl_nike_nyc_1107 | active | {"manager":"Zhang Wei","event_contact":"212-555-6789"} | 2026-04-02 11:05:33 | 2026-10-22 09:15:47 |
+| popevent_2026_007 | 2026 NYC Christmas Market - Bryant Park | {"type":"pop_up_event","district":"Midtown","duration":"2026-12-01 to 2027-01-02"} | tmpl_xmas_market_2026 | awaiting_calibration | {"event_coordinator":"Wang Fang"} | 2026-10-25 16:42:18 | 2026-10-25 16:42:18 |
+| store_0789 | McDonald's - Brooklyn Downtown | {"brand":"McDonald's","district":"Brooklyn","store_tier":"standard","opening_hours":"06:00-23:00"} | tmpl_mcd_bk_0789 | draft | {"manager":"Zhao Qiang"} | 2026-10-26 10:08:55 | 2026-10-26 10:08:55 |
+
+These are technical geospatial entries, mapped 1:1 to the location_id values from the labels table, using standard WKT format supported by all major spatial databases ‌.
+
+表格
+| geofence_id | location_id | geofence_geometry (WKT Format) | trigger_event_type | trigger_parameters | indoor_beacon_mapping | geofence_accuracy_m | last_calibrated_at | calibration_engineer_id |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| geof_0421_outer | store_0421 | geography::STGeomFromText('POINT(-73.9857 40.7484)', 4326).STBuffer(100) | geofence_entered | {"dwell_minutes": 0, "max_daily_triggers": 1, "quiet_hours_block": "22:00-07:00"} | NULL | 10 | 2026-10-18 10:22:31 | eng_li |
+| geof_0421_indoor | store_0421 | geography::STGeomFromText('POLYGON((-73.9858 40.7485, -73.9856 40.7485, -73.9856 40.7483, -73.9858 40.7483, -73.9858 40.7485))', 4326) | dwell_time_reached | {"dwell_minutes": 3, "max_daily_triggers": 1} | ["UUID-STB-001", "UUID-STB-002"] | 3 | 2026-10-18 11:05:02 | eng_li |
+| geof_1107_main | store_1107 | geography::STGeomFromText('POINT(-73.9872 40.7580)', 4326).STBuffer(80) | geofence_entered | {"dwell_minutes": 2, "max_daily_triggers": 1, "quiet_hours_block": "23:00-10:00"} | ["UUID-NIKE-TS-001"] | 8 | 2026-10-20 15:40:22 | eng_wang |
+| geof_0789_delivery | store_0789 | geography::STGeomFromText('POLYGON((-73.9765 40.6805, -73.9755 40.6805, -73.9755 40.6795, -73.9765 40.6795, -73.9765 40.6805))', 4326) | geofence_entered | {"dwell_minutes": 0, "max_daily_triggers": 3} | NULL | 15 | 2026-10-27 09:30:00 | eng_zhao |
+
+Format Preview Notes
+All WKT entries use SRID 4326 (WGS84), the global standard for GPS coordinate systems, fully compatible with SQL Server, PostGIS, and Azure Databricks spatial pipelines .
+The sample Starbucks location has two independent geofences: a 100m outer pre-arrival fence, and a tiny indoor 20m x 20m fence for in-store promotional triggers.
+The indoor_beacon_mapping field stores BLE beacon UUIDs for GPS-blocked indoor environments, ensuring 3-meter-level trigger accuracy inside large buildings.
+
+These samples can be directly imported into your staging environment to run full end-to-end message delivery validation tests.
+
+Next: Generate a complete SQL import script for these sample entries, so you can load them directly into your spatial database with one click.
