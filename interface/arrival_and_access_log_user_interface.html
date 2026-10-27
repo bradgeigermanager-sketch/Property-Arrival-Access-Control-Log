@@ -216,7 +216,22 @@
                 </div>
                 <button onclick="logManualEntry()">Record Manual Arrival</button>
             </div>
-
+        <div class="card" style="margin-top: 20px;">
+    <h2>Quick-Issue Temporary Badge</h2>
+    <div class="form-group">
+        <label for="temp-name">Visitor / Contractor Name</label>
+        <input type="text" id="temp-name" placeholder="e.g., Marcus Vance">
+    </div>
+    <div class="form-group">
+        <label for="temp-reason">Company / Visit Reason</label>
+        <input type="text" id="temp-reason" placeholder="e.g., HVAC Contractor">
+    </div>
+    <div class="form-group">
+        <label for="temp-escort">Assigned Escort (Optional)</label>
+        <input type="text" id="temp-escort" placeholder="e.g., John Doe">
+    </div>
+    <button onclick="quickIssueTempBadge()" style="background-color: #d69e2e;">Generate & Print Temp Slip</button>
+        </div>
             <div class="card">
                 <h2>Barcode Scan Simulator</h2>
                 <div class="scanner-simulation">
@@ -251,6 +266,27 @@
         </div>
     </div>
 </div>
+
+<div class="card" style="margin-top: 20px;">
+    <h2>Quick-Issue Temporary Badge</h2>
+    <div class="form-group">
+        <label for="temp-name">Visitor / Contractor Name</label>
+        <input type="text" id="temp-name" placeholder="e.g., Marcus Vance">
+    </div>
+    <div class="form-group">
+        <label for="temp-reason">Company / Visit Reason</label>
+        <input type="text" id="temp-reason" placeholder="e.g., HVAC Contractor">
+    </div>
+    <div class="form-group">
+        <label for="temp-escort">Assigned Escort (Optional)</label>
+        <input type="text" id="temp-escort" placeholder="e.g., John Doe">
+    </div>
+    <button onclick="quickIssueTempBadge()" style="background-color: #d69e2e;">Generate & Print Temp Slip</button>
+</div>
+
+<script>
+
+</script>
 
 <!-- File Viewer Modal -->
 <div id="file-modal" class="modal-overlay">
@@ -325,6 +361,50 @@
         renderTable();
     }
 
+
+    async function quickIssueTempBadge() {
+    const name = document.getElementById('temp-name').value.trim();
+    const reason = document.getElementById('temp-reason').value.trim();
+    const escort = document.getElementById('temp-escort').value.trim();
+
+    if (!name || !reason) {
+        alert("Please enter visitor name and reason.");
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:5000/api/create-temp-badge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, reason, escort, hours: 8 })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            // Automatically open print window for the temporary slip
+            const printWindow = window.open('', '_blank', 'width=350,height=500');
+            printWindow.document.write(`
+                <html><head><title>Print Temp Badge - ${result.badge_id}</title></head>
+                <body onload="window.print(); window.close();">
+                    ${result.printable_html}
+                </body></html>
+            `);
+            printWindow.document.close();
+
+            // Refresh registry dropdown
+            loadRegistryDirectory();
+            alert(`Temporary badge ${result.badge_id} issued successfully!`);
+            
+            // Clear inputs
+            document.getElementById('temp-name').value = '';
+            document.getElementById('temp-reason').value = '';
+            document.getElementById('temp-escort').value = '';
+        }
+    } catch (e) {
+        alert("Could not connect to temporary badge issuance service.");
+    }
+    }
+    }
     async function simulateScan() {
         const input = document.getElementById('simulated-barcode');
         const badgeId = input.value.trim();
