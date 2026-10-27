@@ -100,3 +100,35 @@ def api_generate_badge():
     
     html_badge = generate_badge_html_snippet(badge_id, name, role, department, expiration)
     return jsonify({"success": True, "badge_html": html_badge})
+
+@app.route('/api/create-temp-badge', methods=['POST'])
+def api_create_temp_badge():
+    data = request.get_json()
+    name = data.get("name", "Visitor")
+    reason = data.get("reason", "General Visit")
+    escort = data.get("escort", "")
+    hours = int(data.get("hours", 8))
+    
+    # Generate record and HTML slip
+    record, html_slip = create_temporary_badge_slip(name, reason, escort, hours)
+    
+    # Update master directory registry
+    registry = load_registry()
+    registry["directory"].append({
+        "badge_id": record["badge_id"],
+        "name": record["visitor_info"]["full_name"],
+        "record_type": "Temporary",
+        "department": record["visitor_info"]["company_or_reason"],
+        "file_path": f"files/visitors/{record['badge_id']}.json"
+    })
+    registry["registry_metadata"]["total_active_records"] = len(registry["directory"])
+    
+    with open(REGISTRY_PATH, 'w', encoding='utf-8') as f:
+        json.dump(registry, f, indent=4)
+        
+    return jsonify({
+        "success": True,
+        "badge_id": record["badge_id"],
+        "name": name,
+        "printable_html": html_slip
+    })
